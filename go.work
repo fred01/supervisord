@@ -1,0 +1,14 @@
+go 1.23
+
+use (
+	.
+	config
+	events
+	faults
+	logger
+	process
+	signals
+	types
+	util
+	xmlrpcclient
+)

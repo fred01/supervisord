@@ -128,7 +128,7 @@ func (p *Process) addToCron() {
 
 	if s != "" {
 		log.WithFields(log.Fields{"program": p.GetName()}).Info("try to create cron program with cron expression:", s)
-		scheduler.AddFunc(s, func() {
+		_, _ = scheduler.AddFunc(s, func() {
 			log.WithFields(log.Fields{"program": p.GetName()}).Info("start cron program")
 			if !p.isRunning() {
 				p.Start(false)
@@ -140,7 +140,8 @@ func (p *Process) addToCron() {
 
 // Start process
 // Args:
-//  wait - true, wait the program started or failed
+//
+//	wait - true, wait the program started or failed
 func (p *Process) Start(wait bool) {
 	log.WithFields(log.Fields{"program": p.GetName()}).Info("try to start program")
 	p.lock.Lock()
@@ -392,7 +393,6 @@ func (p *Process) getExitCodes() []int {
 }
 
 // check if the process is running or not
-//
 func (p *Process) isRunning() bool {
 	if p.cmd != nil && p.cmd.Process != nil {
 		if runtime.GOOS == "windows" {
@@ -486,8 +486,8 @@ func (p *Process) setProgramRestartChangeMonitor(programPath string) {
 }
 
 // wait for the started program exit
-func (p *Process) waitForExit(startSecs int64) {
-	p.cmd.Wait()
+func (p *Process) waitForExit(_ int64) {
+	_ = p.cmd.Wait()
 	if p.cmd.ProcessState != nil {
 		log.WithFields(log.Fields{"program": p.GetName()}).Infof("program stopped with status:%v", p.cmd.ProcessState)
 	} else {
@@ -506,7 +506,6 @@ func (p *Process) failToStartProgram(reason string, finishCb func()) {
 }
 
 // monitor if the program is in running before endTime
-//
 func (p *Process) monitorProgramIsRunning(endTime time.Time, monitorExited *int32, programExited *int32) {
 	// if time is not expired
 	for time.Now().Before(endTime) && atomic.LoadInt32(programExited) == 0 {
@@ -596,10 +595,10 @@ func (p *Process) run(finishCb func()) {
 				time.Sleep(halfWaitsecs)
 			}
 			if p.StdoutLog != nil {
-				p.StdoutLog.Close()
+				_ = p.StdoutLog.Close()
 			}
 			if p.StderrLog != nil {
-				p.StderrLog.Close()
+				_ = p.StderrLog.Close()
 			}
 		}()
 
@@ -700,9 +699,9 @@ func (p *Process) changeStateTo(procState State) {
 // Signal sends signal to the process
 //
 // Args:
-//   sig - the signal to the process
-//   sigChildren - if true, sends the same signal to the process and its children
 //
+//	sig - the signal to the process
+//	sigChildren - if true, sends the same signal to the process and its children
 func (p *Process) Signal(sig os.Signal, sigChildren bool) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -717,7 +716,7 @@ func (p *Process) sendSignals(sigs []string, sigChildren bool) {
 	for _, strSig := range sigs {
 		sig, err := signals.ToSignal(strSig)
 		if err == nil {
-			p.sendSignal(sig, sigChildren)
+			_ = p.sendSignal(sig, sigChildren)
 		} else {
 			log.WithFields(log.Fields{"program": p.GetName(), "signal": strSig}).Info("Invalid signal name")
 		}
@@ -727,9 +726,9 @@ func (p *Process) sendSignals(sigs []string, sigChildren bool) {
 // send signal to the process
 //
 // Args:
-//    sig - the signal to be sent
-//    sigChildren - if true, the signal also will be sent to children processes too
 //
+//	sig - the signal to be sent
+//	sigChildren - if true, the signal also will be sent to children processes too
 func (p *Process) sendSignal(sig os.Signal, sigChildren bool) error {
 	if p.cmd != nil && p.cmd.Process != nil {
 		log.WithFields(log.Fields{"program": p.GetName(), "signal": sig}).Info("Send signal to program")
@@ -801,14 +800,14 @@ func (p *Process) setLog() {
 			log.WithFields(log.Fields{"eventListener": p.config.GetEventListenerName()}).Error("fail to get stdout")
 			return
 		}
-		events := strings.Split(p.config.GetString("events", ""), ",")
-		for i, event := range events {
-			events[i] = strings.TrimSpace(event)
+		eventNames := strings.Split(p.config.GetString("events", ""), ",")
+		for i, event := range eventNames {
+			eventNames[i] = strings.TrimSpace(event)
 		}
 		p.cmd.Stderr = os.Stderr
 
 		p.registerEventListener(p.config.GetEventListenerName(),
-			events,
+			eventNames,
 			in,
 			out)
 	}
@@ -962,7 +961,7 @@ func (p *Process) Stop(wait bool) {
 				continue
 			}
 			log.WithFields(log.Fields{"program": p.GetName(), "signal": sigs[i]}).Info("send stop signal to program")
-			p.Signal(sig, stopasgroup)
+			_ = p.Signal(sig, stopasgroup)
 			endTime := time.Now().Add(waitsecs)
 			// wait at most "stopwaitsecs" seconds for one signal
 			for endTime.After(time.Now()) {
@@ -976,7 +975,7 @@ func (p *Process) Stop(wait bool) {
 		}
 		if atomic.LoadInt32(&stopped) == 0 {
 			log.WithFields(log.Fields{"program": p.GetName()}).Info("force to kill the program")
-			p.Signal(syscall.SIGKILL, killasgroup)
+			_ = p.Signal(syscall.SIGKILL, killasgroup)
 			killEndTime := time.Now().Add(killwaitsecs)
 			for killEndTime.After(time.Now()) {
 				// if it exits
