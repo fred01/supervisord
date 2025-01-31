@@ -9,27 +9,6 @@ before:
     - go mod download
 
 builds:
-
-  - id: dynamic
-    binary: supervisord
-    env:
-      - CGO_ENABLED=0
-    ldflags:
-      - "-s -w"
-    flags:
-      - -tags=release
-    goos:
-      - linux
-      - darwin
-      - windows
-    goarch:
-      - amd64
-      - arm64
-      - arm
-    goarm:
-      - "6"
-      - "7"
-
   - id: static
     binary: supervisord
     env:
@@ -53,29 +32,8 @@ builds:
         goarch: arm64
         env:
           - CC=aarch64-linux-gnu-gcc
-    hooks:
-      post:
-        - cmd: upx "{{ .Path }}"
 
 archives:
-
-  - id: archive_multi
-    builds: [dynamic]
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
-    format: tar.gz
-    format_overrides:
-      - goos: windows
-        format: zip
-    wrap_in_directory: true
-    files:
-      - none*
-
   - id: archive_static
     builds: [static]
     name_template: >-
@@ -85,14 +43,14 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-    format: tar.gz
+    formats: [ 'tar.gz' ]
     wrap_in_directory: true
     files:
       - none*
 
 release:
   github:
-    owner: ochinchina
+    owner: fred01
     name: supervisord
   draft: false
   prerelease: auto
