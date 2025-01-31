@@ -16,16 +16,13 @@ builds:
     env:
       - CGO_ENABLED=1
     ldflags:
-      - >-
-        {{ if eq .Os "linux" }} -linkmode external -extldflags -static {{ end }}
+      - "-linkmode external -extldflags -static"
     flags:
       - -tags=release
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
-      - arm64
 
 archives:
   - id: archive_static
